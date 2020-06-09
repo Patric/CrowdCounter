@@ -54,7 +54,7 @@ class FullscreenActivity : AppCompatActivity() {
 
 
 
-    val MAX_PREVIEW_WIDGTH = 1920
+    val MAX_PREVIEW_WIDTH = 1920
     val MAX_PREVIEW_HEIGHT = 1080
 
     lateinit var myCameraId:String
@@ -266,7 +266,7 @@ class FullscreenActivity : AppCompatActivity() {
             myCameraOpenCloseLock.release()
         }
     }
-
+    //1080 x 1965 put here
     private fun setUpCameraOutputs(width:Int,height:Int){
         var cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try{
@@ -278,25 +278,32 @@ class FullscreenActivity : AppCompatActivity() {
                 }
 
                 var map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+                println(map)
                 if (map == null){
                     continue
                 }
+
                 var sizesList:MutableList<Size> = ArrayList()
                 sizesList.addAll(map.getOutputSizes(ImageFormat.JPEG))
+
                 var largestPreviewSize: Size = Collections.max(sizesList, compareSizesByArea())
+
                 myImageReader = ImageReader.newInstance(largestPreviewSize.width,largestPreviewSize.height,
                     ImageFormat.JPEG,2)
                 myImageReader?.setOnImageAvailableListener(null,myBackgroundHandler)
                 var displaySize = Point()
+
+                //displaySize(1080, 2131)
                 windowManager.defaultDisplay.getSize(displaySize)
+                println("Display size: $displaySize")
                 var rotatedPreviewWidth = width
                 var rotatedPreviewHeight = height
-                var maxPreviewWidth = displaySize?.x
-                var maxPreviewHeight = displaySize?.y
+                var maxPreviewWidth = displaySize?.y
+                var maxPreviewHeight = displaySize?.x
 
                 if (maxPreviewWidth != null) {
-                    if (maxPreviewWidth > MAX_PREVIEW_WIDGTH){
-                        maxPreviewWidth = MAX_PREVIEW_WIDGTH
+                    if (maxPreviewWidth > MAX_PREVIEW_WIDTH){
+                        maxPreviewWidth = MAX_PREVIEW_WIDTH
                     }
                 }
 
@@ -305,7 +312,10 @@ class FullscreenActivity : AppCompatActivity() {
                         maxPreviewHeight = MAX_PREVIEW_HEIGHT
                     }
                 }
-                myPreviewSize = chooseOptimalSize(sizesList.toTypedArray(), rotatedPreviewWidth,rotatedPreviewHeight,maxPreviewWidth,maxPreviewHeight,largestPreviewSize)
+                myPreviewSize = chooseOptimalSize(sizesList.toTypedArray(), rotatedPreviewWidth,rotatedPreviewHeight,maxPreviewWidth,maxPreviewHeight)//,largestPreviewSize)
+                println("myPreviewSize: $myPreviewSize")
+
+
                 myCameraId = cameraId
                 return
             }
@@ -323,6 +333,7 @@ class FullscreenActivity : AppCompatActivity() {
             myPreviewRequestBuilder =
                 myCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
             myPreviewRequestBuilder.addTarget(surface)
+            //myPreviewRequestBuilder.set(CaptureRequest.JPEG_QUALITY, 90.toByte())
             var cameraCSSC = object : CameraCaptureSession.StateCallback() {
                 override fun onConfigureFailed(session: CameraCaptureSession) {
                 }
@@ -396,15 +407,15 @@ class FullscreenActivity : AppCompatActivity() {
     }
 
     private fun chooseOptimalSize(choices:Array<Size>, textureViewWidth:Int, textureViewHeight:Int,
-                                  maxWidth:Int?, maxHeight:Int?, aspectRatio: Size
+                                  maxWidth:Int?, maxHeight:Int?//, aspectRatio: Size
     ): Size
     {
         var bigEnough:MutableList<Size> = ArrayList()
         var notBigEnough:MutableList<Size> = ArrayList()
-        var w = aspectRatio.width
-        var h = aspectRatio.height
+//        var w = aspectRatio.width
+//        var h = aspectRatio.height
         for (option in choices){
-            if (option.width <= maxWidth!! && option.height <= maxHeight!! && option.width == option.height*h/w){
+            if (option.width <= maxWidth!! && option.height <= maxHeight!!){
                 if (option.width >= textureViewWidth && option.height >= textureViewHeight){
                     bigEnough.add(option)
                 }
@@ -415,7 +426,7 @@ class FullscreenActivity : AppCompatActivity() {
         }
 
         if(bigEnough.size > 0){
-            return Collections.min(bigEnough, compareSizesByArea())
+            return Collections.max(bigEnough, compareSizesByArea())
         }else if(notBigEnough.size > 0) {
             return Collections.max(notBigEnough, compareSizesByArea())
         } else {
@@ -438,13 +449,25 @@ class FullscreenActivity : AppCompatActivity() {
         if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation){
             bufferRect.offset(centerX- bufferRect.centerX(), centerY - bufferRect.centerY())
             matrix!!.setRectToRect(viewRect,bufferRect, Matrix.ScaleToFit.FILL)
-            var scale = Math.max((viewHeight/myPreviewSize!!.height.toDouble()).toFloat(),(viewWidth/myPreviewSize!!.width.toDouble()).toFloat())
+            //Use max to set it to fullscreen. Use min to not scale resolution
+            var scale = Math.max((viewHeight/myPreviewSize!!.width.toDouble()).toFloat(),(viewWidth/myPreviewSize!!.height.toDouble()).toFloat())
+
             matrix.postScale(scale,scale,centerX,centerY)
             matrix.postRotate(90*(rotation-2).toFloat(),centerX,centerY)
         }
         else if (Surface.ROTATION_180 == rotation){
             matrix!!.postRotate(180.toFloat(),centerX,centerY)
         }
+        else if (Surface.ROTATION_0 == rotation)
+        {
+            bufferRect.offset(centerX- bufferRect.centerX(), centerY - bufferRect.centerY())
+            matrix!!.setRectToRect(viewRect,bufferRect, Matrix.ScaleToFit.FILL)
+
+            var scale = Math.max((viewHeight/myPreviewSize!!.width.toDouble()).toFloat(),(viewWidth/myPreviewSize!!.height.toDouble()).toFloat())
+            matrix.postScale(scale,scale,centerX,centerY)
+
+        }
+        println("matrix: $matrix")
         cameraTextureView!!.setTransform(matrix)
     }
 
@@ -460,7 +483,7 @@ class FullscreenActivity : AppCompatActivity() {
             requestCameraPermission()
             return
         }
-
+        println("$width, $height")
         setUpCameraOutputs(width, height)
         configureTransform(width,height)
         var cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
