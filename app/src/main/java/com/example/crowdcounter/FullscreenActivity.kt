@@ -10,8 +10,6 @@ import android.hardware.camera2.*
 import android.media.Image
 import android.media.ImageReader
 import android.media.ImageReader.OnImageAvailableListener
-import android.opengl.GLES20
-import android.opengl.GLSurfaceView
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -21,10 +19,7 @@ import android.view.MotionEvent
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -33,8 +28,6 @@ import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
 import kotlin.collections.ArrayList
 import kotlin.math.sign
 import kotlin.system.exitProcess
@@ -52,8 +45,8 @@ class FullscreenActivity : AppCompatActivity() {
 
     lateinit var cameraLayout: FrameLayout
     lateinit var myTextureView: TextureView
-    lateinit var myGLSurfaceView: GLSurfaceView
-
+   // lateinit var myGLSurfaceView: GLSurfaceView
+    lateinit var myImageView: ImageView
 
     val MAX_PREVIEW_WIDTH = 1920
     val MAX_PREVIEW_HEIGHT = 1080
@@ -131,6 +124,7 @@ class FullscreenActivity : AppCompatActivity() {
 
         fullscreenContentControls = findViewById(R.id.fullscreen_content_controls)
 
+        myImageView = findViewById(R.id.myImageView)
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
@@ -140,10 +134,10 @@ class FullscreenActivity : AppCompatActivity() {
         myTextureView = findViewById(R.id.camTextureView)
         cameraLayout = findViewById(R.id.CameraLayout)
 
-        myGLSurfaceView = MyGLSurfaceView(this)
-       // myGLSurfaceView = findViewById(R.id.myGLSurfaceView);
+       // myGLSurfaceView = MyGLSurfaceView(this)
 
-        setContentView(myGLSurfaceView)
+        //setContentView(myGLSurfaceView)
+
 
         //cameraLayout = findViewById(R.id.CameraLayout)
 
@@ -246,11 +240,7 @@ class FullscreenActivity : AppCompatActivity() {
 
     }
 
-    interface OnImageReadyListener {
-        // Later this method needs to be overwritten
-        fun getImage(image: Bitmap?)
 
-    }
 
     class ImageConverter {
 
@@ -277,66 +267,172 @@ class FullscreenActivity : AppCompatActivity() {
 
     }
 
+    interface OnImageReadyListener {
+        // Later this method needs to be overwritten
+        fun getImage(image: Bitmap?)
 
+    }
 
 
 //    var onImageReadyListener = onImageReadyListener() {
+//        override fun getImage(image: Bitmap?)
+//        {
 //
+//        }
 //    }
 
 
 
 
 
-    class MyGLRenderer: GLSurfaceView.Renderer {
-
-        override fun onSurfaceCreated(unused: GL10, config: EGLConfig){
-            //Set the background frame colour
-            GLES20.glGenTextures(1, GLTextureHandle, 0)
-            GLES20.glEnable(GL10.GL_TEXTURE_2D)
-           // GLES20.glBindTexture(GL10.GL_TEXTURE_2D, );
-            GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-        }
-
-        override fun onDrawFrame(unused: GL10?) {
-            //Redraw background color
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-
-        }
-
-        override fun onSurfaceChanged(unused: GL10?, width: Int, height: Int) {
-            GLES20.glViewport(0,0,width, height)
-        }
-
-
-    }
 
 
 
-    class MyGLSurfaceView(context: Context) : GLSurfaceView(context){
 
-        private val renderer: MyGLRenderer
-        init{
-            //Creating openGL ES 2.0 context
-            setEGLContextClientVersion(2)
+//    class MyGLRenderer: GLSurfaceView.Renderer {
+//
+//        override fun onSurfaceCreated(unused: GL10, config: EGLConfig){
+//            //Set the background frame colour
+//            GLES20.glGenTextures(1, GLTextureHandle, 0)
+//            GLES20.glEnable(GL10.GL_TEXTURE_2D)
+//           // GLES20.glBindTexture(GL10.GL_TEXTURE_2D, );
+//            GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+//        }
+//
+//        override fun onDrawFrame(unused: GL10?) {
+//            //Redraw background color
+//            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+//
+//
+//        }
+//
+//        override fun onSurfaceChanged(unused: GL10?, width: Int, height: Int) {
+//            GLES20.glViewport(0,0,width, height)
+//        }
+//
+//
+//    }
+//
+//
+//
+//    class MyGLSurfaceView(context: Context) : GLSurfaceView(context){
+//
+//        private val renderer: MyGLRenderer
+//        init{
+//            //Creating openGL ES 2.0 context
+//            setEGLContextClientVersion(2)
+//
+//            renderer = MyGLRenderer()
+//
+//            //set the Renderer to draw on the GLSurfaceView
+//            setRenderer(renderer)
+//
+//            //Render view only when there is change in drawing data
+//            renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+//
+//        }
+//
+//
+//    }
 
-            renderer = MyGLRenderer()
-
-            //set the Renderer to draw on the GLSurfaceView
-            setRenderer(renderer)
-
-            //Render view only when there is change in drawing data
-            renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
-
-        }
 
 
-    }
+
+//    private static byte[] YUV_420_888_data(Image image) {
+//        final int imageWidth = image.getWidth();
+//        final int imageHeight = image.getHeight();
+//        final Image.Plane[] planes = image.getPlanes();
+//        byte[] data = new byte[imageWidth * imageHeight *
+//                ImageFormat.getBitsPerPixel(ImageFormat.YUV_420_888) / 8];
+//        int offset = 0;
+//
+//        for (int plane = 0; plane < planes.length; ++plane) {
+//            final ByteBuffer buffer = planes[plane].getBuffer();
+//            final int rowStride = planes[plane].getRowStride();
+//            // Experimentally, U and V planes have |pixelStride| = 2, which
+//            // essentially means they are packed.
+//            final int pixelStride = planes[plane].getPixelStride();
+//            final int planeWidth = (plane == 0) ? imageWidth : imageWidth / 2;
+//            final int planeHeight = (plane == 0) ? imageHeight : imageHeight / 2;
+//            if (pixelStride == 1 && rowStride == planeWidth) {
+//                // Copy whole plane from buffer into |data| at once.
+//                buffer.get(data, offset, planeWidth * planeHeight);
+//                offset += planeWidth * planeHeight;
+//            } else {
+//                // Copy pixels one by one respecting pixelStride and rowStride.
+//                byte[] rowData = new byte[rowStride];
+//                for (int row = 0; row < planeHeight - 1; ++row) {
+//                    buffer.get(rowData, 0, rowStride);
+//                    for (int col = 0; col < planeWidth; ++col) {
+//                    data[offset++] = rowData[col * pixelStride];
+//                }
+//                }
+//                // Last row is special in some devices and may not contain the full
+//                // |rowStride| bytes of data.
+//                // See http://developer.android.com/reference/android/media/Image.Plane.html#getBuffer()
+//                buffer.get(rowData, 0, Math.min(rowStride, buffer.remaining()));
+//                for (int col = 0; col < planeWidth; ++col) {
+//                    data[offset++] = rowData[col * pixelStride];
+//                }
+//            }
+//        }
+//
+//        return data;
+
+
+//    class MSurface(context: Context?) : SurfaceView(context),
+//        SurfaceHolder.Callback {
+//        protected fun onDraw(canvas: Canvas?) {
+//            super.onDraw(canvas)
+//            val icon = BitmapFactory.decodeResource(getResources(), R.drawable.icon)
+//            canvas!!.drawColor(Color.BLACK)
+//            canvas.drawBitmap(icon, 10, 10, Paint())
+//        }
+//
+//        fun surfaceChanged(
+//            holder: SurfaceHolder?,
+//            format: Int,
+//            width: Int,
+//            height: Int
+//        ) {
+//            // TODO Auto-generated method stub
+//        }
+//
+//        fun surfaceCreated(holder: SurfaceHolder) {
+//            var canvas: Canvas? = null
+//            try {
+//                canvas = holder.lockCanvas(null)
+//                synchronized(holder) { onDraw(canvas) }
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            } finally {
+//                if (canvas != null) {
+//                    holder.unlockCanvasAndPost(canvas)
+//                }
+//            }
+//        }
+//
+//        fun surfaceDestroyed(holder: SurfaceHolder?) {
+//            // TODO Auto-generated method stub
+//        }
+//
+//        init {
+//            getHolder().addCallback(this)
+//        }
+//    }
+
+
+
+
+
 
     private var myOnImageAvailableListener: OnImageAvailableListener = object: OnImageAvailableListener{
 
+        //prviate var myPreviewFrameHandler: PrevieFrameHandler
+
         override fun onImageAvailable(reader: ImageReader?) {
-            val readImage: Image? = reader?.acquireNextImage()
+            val readImage: Image? = reader?.acquireLatestImage()
+
            // var rect = Rect(0,0, 300, 300)
             //readImage?.setCropRect(rect)
             val bBuffer: ByteBuffer = readImage?.getPlanes()?.get(0)!!.getBuffer()
@@ -345,9 +441,27 @@ class FullscreenActivity : AppCompatActivity() {
             val buffer = ByteArray(bBuffer.remaining())
             readImage?.getPlanes().get(0).getBuffer().get(buffer)
             val bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.size)
-           // bitmapBuffer = bitmap
-//            if(onImageReadyListener != null)
-//                onImageReadyListener?.getImage(bitmap);
+            val matrix = Matrix()
+
+            matrix.postRotate(90F)
+
+            //val scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width, bitmap.height, true)
+
+            val rotatedBitmap = Bitmap.createBitmap(
+                bitmap,
+                0,
+                0,
+                bitmap.width,
+                bitmap.height,
+                matrix,
+                true
+            )
+            this@FullscreenActivity.runOnUiThread(java.lang.Runnable {
+                //myImageView.setRotation(90F)
+                myImageView.setImageBitmap(rotatedBitmap)
+                })
+         //if(onImageReadyListener != null)
+            // onImageReadyListener?.getImage(bitmap);
 
             readImage?.close()
 
@@ -390,6 +504,7 @@ class FullscreenActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
         startBackgroungThread()
 
 
@@ -445,12 +560,12 @@ class FullscreenActivity : AppCompatActivity() {
                 }
 
                 var sizesList:MutableList<Size> = ArrayList()
-                sizesList.addAll(map.getOutputSizes(ImageFormat.YUV_420_888))
+                sizesList.addAll(map.getOutputSizes(ImageFormat.JPEG))
 
                 var largestPreviewSize: Size = Collections.max(sizesList, compareSizesByArea())
 
-                myImageReader = ImageReader.newInstance(largestPreviewSize.width,largestPreviewSize.height,
-                    ImageFormat.YUV_420_888,2)
+                myImageReader = ImageReader.newInstance(MAX_PREVIEW_WIDTH,MAX_PREVIEW_HEIGHT,
+                    ImageFormat.JPEG,2)
                 myImageReader?.setOnImageAvailableListener(myOnImageAvailableListener,myBackgroundHandler)
                 var displaySize = Point()
 
@@ -491,6 +606,7 @@ class FullscreenActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.P)
     private fun createCameraPreviewSession(){
         try {
+
             var texture = myTextureView!!.surfaceTexture
             texture.setDefaultBufferSize(myPreviewSize!!.getWidth(), myPreviewSize!!.getHeight())
             var surface = Surface(texture)
