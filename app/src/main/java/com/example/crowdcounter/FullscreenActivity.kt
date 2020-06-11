@@ -1,42 +1,43 @@
 package com.example.crowdcounter
 
 
-import androidx.appcompat.app.AppCompatActivity
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.os.Handler
-import android.view.MotionEvent
-import android.view.View
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.hardware.camera2.*
+import android.media.Image
 import android.media.ImageReader
+import android.media.ImageReader.OnImageAvailableListener
+import android.opengl.GLES20
+import android.opengl.GLSurfaceView
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
 import android.os.HandlerThread
 import android.util.Size
+import android.view.MotionEvent
 import android.view.Surface
 import android.view.TextureView
+import android.view.View
+import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.lang.RuntimeException
+import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import kotlin.Comparator
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
 import kotlin.collections.ArrayList
 import kotlin.math.sign
 import kotlin.system.exitProcess
-
-
-
-
 
 
 /**
@@ -50,8 +51,8 @@ class FullscreenActivity : AppCompatActivity() {
     private val hideHandler = Handler()
 
     lateinit var cameraLayout: FrameLayout
-    lateinit var cameraTextureView: TextureView
-
+    lateinit var myTextureView: TextureView
+    lateinit var myGLSurfaceView: GLSurfaceView
 
 
     val MAX_PREVIEW_WIDTH = 1920
@@ -70,6 +71,7 @@ class FullscreenActivity : AppCompatActivity() {
     lateinit var myPreviewRequest: CaptureRequest
     var myCameraOpenCloseLock: Semaphore = Semaphore(1)
     val REQUEST_CAMERA_PERMISSION = 1
+
 
 
     @SuppressLint("InlinedApi")
@@ -135,8 +137,14 @@ class FullscreenActivity : AppCompatActivity() {
         // while interacting with the UI.
         findViewById<Button>(R.id.photo_button).setOnTouchListener(delayHideTouchListener)
 
-        cameraTextureView = findViewById(R.id.camTextureView)
+        myTextureView = findViewById(R.id.camTextureView)
         cameraLayout = findViewById(R.id.CameraLayout)
+
+        myGLSurfaceView = MyGLSurfaceView(this)
+       // myGLSurfaceView = findViewById(R.id.myGLSurfaceView);
+
+        setContentView(myGLSurfaceView)
+
         //cameraLayout = findViewById(R.id.CameraLayout)
 
     }
@@ -191,6 +199,8 @@ class FullscreenActivity : AppCompatActivity() {
     }
 
     companion object {
+        var GLTextureHandle = IntArray(1)
+        lateinit var bitmapBuffer: Bitmap
         /**
          * Whether or not the system UI should be auto-hidden after
          * [AUTO_HIDE_DELAY_MILLIS] milliseconds.
@@ -213,9 +223,15 @@ class FullscreenActivity : AppCompatActivity() {
     var mySurfaceTextureListener: TextureView.SurfaceTextureListener = object: TextureView.SurfaceTextureListener{
         override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
             configureTransform(width,height)
+
         }
 
         override fun onSurfaceTextureUpdated(surface: SurfaceTexture?) {
+            if (myTextureView != null){
+
+              //  myTextureView.surfaceTexture.releaseTexImage()
+
+            }
         }
 
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?): Boolean {
@@ -224,18 +240,163 @@ class FullscreenActivity : AppCompatActivity() {
 
         override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
             openCamera(width,height)
+
+
         }
 
     }
+
+    interface OnImageReadyListener {
+        // Later this method needs to be overwritten
+        fun getImage(image: Bitmap?)
+
+    }
+
+    class ImageConverter {
+
+        private val TAG = ImageConverter::class.java.simpleName
+        //converting bitmap from JPEG to ARGB8888 format
+        fun JPEGtoARGB8888(input: Bitmap): Bitmap{
+            var output: Bitmap? = null
+            var size: Int = input.getWidth() * input.getHeight()
+            val pixels = IntArray(size)
+            input.getPixels(pixels,0,input.getWidth(),0,0,input.getWidth(),input.getHeight())
+            output = Bitmap.createBitmap(input.getWidth(),input.getHeight(), Bitmap.Config.ARGB_8888)
+            output.setPixels(pixels, 0, output.getWidth(), 0, 0, output.getWidth(), output.getHeight())
+            return output // ARGB_8888 formated bitmap
+
+        }
+
+//        private fun BitmapToMat(bitmap: Bitmap): Mat? {
+//            val bitmapARGB8888 = JPEGtoARGB8888(bitmap)
+//            val imageMat = Mat()
+//            Utils.bitmapToMat(bitmapARGB8888, imageMat)
+//            return imageMat
+//        }
+
+
+    }
+
+
+
+
+//    var onImageReadyListener = onImageReadyListener() {
+//
+//    }
+
+
+
+
+
+    class MyGLRenderer: GLSurfaceView.Renderer {
+
+        override fun onSurfaceCreated(unused: GL10, config: EGLConfig){
+            //Set the background frame colour
+            GLES20.glGenTextures(1, GLTextureHandle, 0)
+            GLES20.glEnable(GL10.GL_TEXTURE_2D)
+           // GLES20.glBindTexture(GL10.GL_TEXTURE_2D, );
+            GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+        }
+
+        override fun onDrawFrame(unused: GL10?) {
+            //Redraw background color
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+
+        }
+
+        override fun onSurfaceChanged(unused: GL10?, width: Int, height: Int) {
+            GLES20.glViewport(0,0,width, height)
+        }
+
+
+    }
+
+
+
+    class MyGLSurfaceView(context: Context) : GLSurfaceView(context){
+
+        private val renderer: MyGLRenderer
+        init{
+            //Creating openGL ES 2.0 context
+            setEGLContextClientVersion(2)
+
+            renderer = MyGLRenderer()
+
+            //set the Renderer to draw on the GLSurfaceView
+            setRenderer(renderer)
+
+            //Render view only when there is change in drawing data
+            renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+
+        }
+
+
+    }
+
+    private var myOnImageAvailableListener: OnImageAvailableListener = object: OnImageAvailableListener{
+
+        override fun onImageAvailable(reader: ImageReader?) {
+            val readImage: Image? = reader?.acquireNextImage()
+           // var rect = Rect(0,0, 300, 300)
+            //readImage?.setCropRect(rect)
+            val bBuffer: ByteBuffer = readImage?.getPlanes()?.get(0)!!.getBuffer()
+            bBuffer.rewind()
+
+            val buffer = ByteArray(bBuffer.remaining())
+            readImage?.getPlanes().get(0).getBuffer().get(buffer)
+            val bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.size)
+           // bitmapBuffer = bitmap
+//            if(onImageReadyListener != null)
+//                onImageReadyListener?.getImage(bitmap);
+
+            readImage?.close()
+
+
+        }
+    }
+//        OnImageAvailableListener { reader ->
+//            Log.d(
+//                FragmentActivity.TAG,
+//                "The onImageAvailable thread id: " + Thread.currentThread().id
+//            )
+//            val readImage: Image = reader.acquireLatestImage()
+//            readImage.close()
+//        }
+
+
+//    var mySurfaceTextureListener: TextureView.SurfaceTextureListener = object: TextureView.SurfaceTextureListener{
+//        override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
+//            configureTransform(width,height)
+//        }
+//
+//        override fun onSurfaceTextureUpdated(surface: SurfaceTexture?) {
+//
+//
+//        }
+//
+//        override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?): Boolean {
+//            return true
+//        }
+//
+//        override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
+//            openCamera(width,height)
+//
+//
+//        }
+//
+//    }
+
+
 
     override fun onResume() {
         super.onResume()
         startBackgroungThread()
 
-        if(cameraTextureView?.isAvailable == true){
-            openCamera(cameraTextureView!!.width,cameraTextureView!!.height)
+
+        if(myTextureView?.isAvailable == true){
+            openCamera(myTextureView!!.width,myTextureView!!.height)
         }else{
-            cameraTextureView!!.surfaceTextureListener = mySurfaceTextureListener
+            myTextureView!!.surfaceTextureListener = mySurfaceTextureListener
         }
     }
 
@@ -278,24 +439,24 @@ class FullscreenActivity : AppCompatActivity() {
                 }
 
                 var map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                println(map)
+                //println(map)
                 if (map == null){
                     continue
                 }
 
                 var sizesList:MutableList<Size> = ArrayList()
-                sizesList.addAll(map.getOutputSizes(ImageFormat.JPEG))
+                sizesList.addAll(map.getOutputSizes(ImageFormat.YUV_420_888))
 
                 var largestPreviewSize: Size = Collections.max(sizesList, compareSizesByArea())
 
                 myImageReader = ImageReader.newInstance(largestPreviewSize.width,largestPreviewSize.height,
-                    ImageFormat.JPEG,2)
-                myImageReader?.setOnImageAvailableListener(null,myBackgroundHandler)
+                    ImageFormat.YUV_420_888,2)
+                myImageReader?.setOnImageAvailableListener(myOnImageAvailableListener,myBackgroundHandler)
                 var displaySize = Point()
 
                 //displaySize(1080, 2131)
                 windowManager.defaultDisplay.getSize(displaySize)
-                println("Display size: $displaySize")
+
                 var rotatedPreviewWidth = width
                 var rotatedPreviewHeight = height
                 var maxPreviewWidth = displaySize?.y
@@ -313,7 +474,7 @@ class FullscreenActivity : AppCompatActivity() {
                     }
                 }
                 myPreviewSize = chooseOptimalSize(sizesList.toTypedArray(), rotatedPreviewWidth,rotatedPreviewHeight,maxPreviewWidth,maxPreviewHeight)//,largestPreviewSize)
-                println("myPreviewSize: $myPreviewSize")
+               // println("myPreviewSize: $myPreviewSize")
 
 
                 myCameraId = cameraId
@@ -324,18 +485,29 @@ class FullscreenActivity : AppCompatActivity() {
         }
     }
 
+
+   
+
     @RequiresApi(Build.VERSION_CODES.P)
     private fun createCameraPreviewSession(){
         try {
-            var texture = cameraTextureView!!.surfaceTexture
+            var texture = myTextureView!!.surfaceTexture
             texture.setDefaultBufferSize(myPreviewSize!!.getWidth(), myPreviewSize!!.getHeight())
             var surface = Surface(texture)
+            //val mImageSurface: Surface? = myImageReader?.getSurface()
+
             myPreviewRequestBuilder =
                 myCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-            myPreviewRequestBuilder.addTarget(surface)
+
+            //myPreviewRequestBuilder.addTarget(surface!!)
+            myPreviewRequestBuilder.addTarget(myImageReader!!.surface)
+
+
+            //myPreviewRequestBuilder.addTarget(surface)
             //myPreviewRequestBuilder.set(CaptureRequest.JPEG_QUALITY, 90.toByte())
             var cameraCSSC = object : CameraCaptureSession.StateCallback() {
                 override fun onConfigureFailed(session: CameraCaptureSession) {
+
                 }
 
                 override fun onConfigured(session: CameraCaptureSession) {
@@ -360,7 +532,13 @@ class FullscreenActivity : AppCompatActivity() {
                 }
 
             }
-            myCameraDevice!!.createCaptureSession(Arrays.asList(surface, myImageReader?.surface),cameraCSSC, null)
+
+            //Image modifications
+            myCameraDevice!!.createCaptureSession(Arrays.asList(surface, myImageReader?.surface!!),cameraCSSC, null)
+            //println("AFTER: ${surface}, ${myImageReader?.surface!!}")
+
+
+
         }catch (e: CameraAccessException){
             e.printStackTrace()
         }
@@ -436,7 +614,7 @@ class FullscreenActivity : AppCompatActivity() {
     }
 
     private fun configureTransform(viewWidth:Int, viewHeight:Int){
-        if (null == cameraTextureView || null == myPreviewSize){
+        if (null == myTextureView || null == myPreviewSize){
             return
         }
 
@@ -467,8 +645,8 @@ class FullscreenActivity : AppCompatActivity() {
             matrix.postScale(scale,scale,centerX,centerY)
 
         }
-        println("matrix: $matrix")
-        cameraTextureView!!.setTransform(matrix)
+        //println("matrix: $matrix")
+        myTextureView!!.setTransform(matrix)
     }
 
     class compareSizesByArea: Comparator<Size>{
@@ -483,7 +661,7 @@ class FullscreenActivity : AppCompatActivity() {
             requestCameraPermission()
             return
         }
-        println("$width, $height")
+
         setUpCameraOutputs(width, height)
         configureTransform(width,height)
         var cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -504,6 +682,7 @@ class FullscreenActivity : AppCompatActivity() {
         override fun onOpened(camera: CameraDevice) {
             myCameraOpenCloseLock.release()
             myCameraDevice = camera
+            println("Creating Preview session")
             this@FullscreenActivity.createCameraPreviewSession()
         }
 
