@@ -8,6 +8,7 @@
     <supports-gl-texture android:name="GL_OES_compressed_paletted_texture" />
 
     <application
+
         android:largeHeap="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -15,6 +16,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <meta-data
+            android:name="com.google.firebase.ml.vision.DEPENDENCIES"
+            android:value="face" />
+
         <activity
             android:name=".FullscreenActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"

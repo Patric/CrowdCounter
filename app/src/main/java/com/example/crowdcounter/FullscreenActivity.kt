@@ -24,6 +24,15 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.gms.tasks.Task
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.common.FirebaseVisionImage
+import com.google.firebase.ml.vision.face.FirebaseVisionFace
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -40,16 +49,17 @@ import kotlin.system.exitProcess
 class FullscreenActivity : AppCompatActivity() {
     private lateinit var fullscreenContent: TextView
     private lateinit var fullscreenContentControls: LinearLayout
-
+    private var mFirebaseAnalytics: FirebaseAnalytics? = null
     private val hideHandler = Handler()
 
+    lateinit var numberOfFaces: TextView
     lateinit var cameraLayout: FrameLayout
     lateinit var myTextureView: TextureView
    // lateinit var myGLSurfaceView: GLSurfaceView
     lateinit var myImageView: ImageView
 
-    val MAX_PREVIEW_WIDTH = 1920
-    val MAX_PREVIEW_HEIGHT = 1080
+    val MAX_PREVIEW_WIDTH = 640
+    val MAX_PREVIEW_HEIGHT = 460
 
     lateinit var myCameraId:String
 
@@ -133,13 +143,10 @@ class FullscreenActivity : AppCompatActivity() {
 
         myTextureView = findViewById(R.id.camTextureView)
         cameraLayout = findViewById(R.id.CameraLayout)
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
-       // myGLSurfaceView = MyGLSurfaceView(this)
+        numberOfFaces = findViewById(R.id.editTextNumber)
 
-        //setContentView(myGLSurfaceView)
-
-
-        //cameraLayout = findViewById(R.id.CameraLayout)
 
     }
 
@@ -257,12 +264,7 @@ class FullscreenActivity : AppCompatActivity() {
 
         }
 
-//        private fun BitmapToMat(bitmap: Bitmap): Mat? {
-//            val bitmapARGB8888 = JPEGtoARGB8888(bitmap)
-//            val imageMat = Mat()
-//            Utils.bitmapToMat(bitmapARGB8888, imageMat)
-//            return imageMat
-//        }
+
 
 
     }
@@ -274,12 +276,7 @@ class FullscreenActivity : AppCompatActivity() {
     }
 
 
-//    var onImageReadyListener = onImageReadyListener() {
-//        override fun getImage(image: Bitmap?)
-//        {
-//
-//        }
-//    }
+
 
 
 
@@ -428,77 +425,145 @@ class FullscreenActivity : AppCompatActivity() {
 
     private var myOnImageAvailableListener: OnImageAvailableListener = object: OnImageAvailableListener{
 
-        //prviate var myPreviewFrameHandler: PrevieFrameHandler
+
 
         override fun onImageAvailable(reader: ImageReader?) {
-            val readImage: Image? = reader?.acquireLatestImage()
 
-           // var rect = Rect(0,0, 300, 300)
-            //readImage?.setCropRect(rect)
-            val bBuffer: ByteBuffer = readImage?.getPlanes()?.get(0)!!.getBuffer()
-            bBuffer.rewind()
 
-            val buffer = ByteArray(bBuffer.remaining())
-            readImage?.getPlanes().get(0).getBuffer().get(buffer)
-            val bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.size)
-            val matrix = Matrix()
+                val readImage: Image? = reader?.acquireLatestImage()
 
-            matrix.postRotate(90F)
+                val bBuffer: ByteBuffer = readImage?.getPlanes()?.get(0)!!.getBuffer()
+                bBuffer.rewind()
 
-            //val scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width, bitmap.height, true)
+                val buffer = ByteArray(bBuffer.remaining())
 
-            val rotatedBitmap = Bitmap.createBitmap(
-                bitmap,
-                0,
-                0,
-                bitmap.width,
-                bitmap.height,
-                matrix,
-                true
-            )
-            this@FullscreenActivity.runOnUiThread(java.lang.Runnable {
-                //myImageView.setRotation(90F)
-                myImageView.setImageBitmap(rotatedBitmap)
+
+                readImage?.getPlanes().get(0).getBuffer().get(buffer)
+                val bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.size)
+                val matrix = Matrix()
+
+                matrix.postRotate(90F)
+
+
+
+                var rotatedBitmap = Bitmap.createBitmap(
+                    bitmap,
+                    0,
+                    0,
+                    bitmap.width,
+                    bitmap.height,
+                    matrix,
+                    true
+                )
+                var bitmapConfig = bitmap.config
+                if(bitmapConfig == null) {
+                    bitmapConfig = android.graphics.Bitmap.Config.ARGB_8888;
+                    rotatedBitmap = rotatedBitmap.copy(bitmapConfig, true)
+                }
+                this@FullscreenActivity.runOnUiThread(java.lang.Runnable {
+                    //myImageView.setRotation(90F)
+
+                    val options: FirebaseVisionFaceDetectorOptions =
+                        FirebaseVisionFaceDetectorOptions.Builder()
+                            .setPerformanceMode(FirebaseVisionFaceDetectorOptions.FAST)
+                            .setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
+                            .setClassificationMode(FirebaseVisionFaceDetectorOptions.FAST)
+                            .setMinFaceSize((0.2F))
+                            .build()
+//                    val metadata =
+//                        FirebaseVisionImageMetadata.Builder()
+//                            .setWidth(640) // 480x360 is typically sufficient for
+//                            .setHeight(460) // image recognition
+//                            .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_YV12)
+//                            .setRotation(90)
+//                            .build()
+
+                    val image: FirebaseVisionImage = FirebaseVisionImage.fromBitmap(rotatedBitmap)
+                    val detector: FirebaseVisionFaceDetector = FirebaseVision.getInstance()
+                        .getVisionFaceDetector(options)
+                    val result: Task<List<FirebaseVisionFace>> = detector.detectInImage(image)
+                        .addOnSuccessListener(
+                            object : OnSuccessListener<List<FirebaseVisionFace?>?> {
+                                override fun onSuccess(faces: List<FirebaseVisionFace?>?) {
+                                    // Task completed successfully
+                                    // ...
+                                    //println("Success")
+                                    //println("Number of faces: ${faces!!.count()}")
+                                    numberOfFaces.setText("Number of faces: ${faces!!.count()}")
+                                for (face in faces!!) {
+                                    val bounds = face?.boundingBox
+                                    var p: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+                                    var canvas: Canvas = Canvas(rotatedBitmap)
+                                    p.setColor(Color.rgb(0, 255, 0))
+                                    p.setTextSize(10F)
+                                    var rect: Rect = Rect(bounds)
+                                    canvas.drawRect(rect, p)
+
+                                }
+                                    myImageView.setImageBitmap(rotatedBitmap)
+                                      //canvas.drawText(face!!.trackingId, toFloat(rect.left), toFloat(rect.top), p)
+
+//                                    //println(bounds)
+//                                    val rotY =
+//                                        face?.headEulerAngleY // Head is rotated to the right rotY degrees
+//                                    val rotZ =
+//                                        face?.headEulerAngleZ // Head is tilted sideways rotZ degrees
+//
+//                                    // If landmark detection was enabled (mouth, ears, eyes, cheeks, and
+//                                    // nose available):
+//                                    val leftEar: FirebaseVisionFaceLandmark? =
+//                                        face?.getLandmark(FirebaseVisionFaceLandmark.LEFT_EAR)
+//                                    if (leftEar != null) {
+//                                        val leftEarPos: FirebaseVisionPoint = leftEar.getPosition()
+//                                    }
+//
+//                                    // If contour detection was enabled:
+//                                    val leftEyeContour: List<FirebaseVisionPoint> =
+//                                        face?.getContour(FirebaseVisionFaceContour.LEFT_EYE)!!.points
+//                                    val upperLipBottomContour: List<FirebaseVisionPoint> =
+//                                        face?.getContour(FirebaseVisionFaceContour.UPPER_LIP_BOTTOM)
+//                                            .points
+//
+//                                    // If classification was enabled:
+//                                    if (face.smilingProbability != FirebaseVisionFace.UNCOMPUTED_PROBABILITY) {
+//                                        val smileProb = face?.smilingProbability
+//                                    }
+//                                    if (face.rightEyeOpenProbability != FirebaseVisionFace.UNCOMPUTED_PROBABILITY) {
+//                                        val rightEyeOpenProb =
+//                                            face.rightEyeOpenProbability
+//                                    }
+//
+//                                    // If face tracking was enabled:
+//                                    if (face.trackingId != FirebaseVisionFace.INVALID_ID) {
+//                                        val id = face.trackingId
+//                                        //println(id)
+//                                    }
+//                                }
+                                }
+                            })
+                        .addOnFailureListener(
+                            object : OnFailureListener {
+                                override fun onFailure(p0: java.lang.Exception) {
+                                    println("Failure")
+
+                                }
+                            })
+
+                    //myImageView.setImageBitmap(rotatedBitmap)
                 })
-         //if(onImageReadyListener != null)
-            // onImageReadyListener?.getImage(bitmap);
+            //}
+            //catch(e: Exception){
+                //println("Image analysis failed")
+            //}
+                //if(onImageReadyListener != null)
+                // onImageReadyListener?.getImage(bitmap);
 
-            readImage?.close()
+                readImage?.close()
 
 
         }
     }
-//        OnImageAvailableListener { reader ->
-//            Log.d(
-//                FragmentActivity.TAG,
-//                "The onImageAvailable thread id: " + Thread.currentThread().id
-//            )
-//            val readImage: Image = reader.acquireLatestImage()
-//            readImage.close()
-//        }
 
-
-//    var mySurfaceTextureListener: TextureView.SurfaceTextureListener = object: TextureView.SurfaceTextureListener{
-//        override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
-//            configureTransform(width,height)
-//        }
-//
-//        override fun onSurfaceTextureUpdated(surface: SurfaceTexture?) {
-//
-//
-//        }
-//
-//        override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?): Boolean {
-//            return true
-//        }
-//
-//        override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
-//            openCamera(width,height)
-//
-//
-//        }
-//
-//    }
 
 
 
