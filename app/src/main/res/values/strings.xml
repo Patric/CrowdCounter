@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">CrowdCounter</string>
     <string name="dummy_content">Crowd\nCounter</string>
-    <string name="photo_button">\Save</string>
+    <string name="photo_button">\Toggle analysis</string>
 </resources>
