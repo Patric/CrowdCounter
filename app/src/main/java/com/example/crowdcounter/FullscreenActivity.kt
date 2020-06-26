@@ -4,6 +4,7 @@ package com.example.crowdcounter
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.hardware.camera2.*
@@ -33,6 +34,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.face.FirebaseVisionFace
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
+import kotlinx.android.synthetic.main.activity_fullscreen.*
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -54,7 +56,6 @@ class FullscreenActivity : AppCompatActivity() {
 
     lateinit var numberOfFaces: TextView
     lateinit var cameraLayout: FrameLayout
-    lateinit var myTextureView: TextureView
    // lateinit var myGLSurfaceView: GLSurfaceView
     lateinit var myImageView: ImageView
 
@@ -62,10 +63,7 @@ class FullscreenActivity : AppCompatActivity() {
     val MAX_PREVIEW_HEIGHT = 460
 
     lateinit var myCameraId:String
-
-
     var myCaptureSession:CameraCaptureSession? = null
-    var myPreviewSize:Size? = null
     var myCameraDevice:CameraDevice? = null
     var myBackgroundThread:HandlerThread? = null
     var myBackgroundHandler: Handler? = null
@@ -74,6 +72,8 @@ class FullscreenActivity : AppCompatActivity() {
     lateinit var myPreviewRequest: CaptureRequest
     var myCameraOpenCloseLock: Semaphore = Semaphore(1)
     val REQUEST_CAMERA_PERMISSION = 1
+
+    var buttonClicked: Boolean = false
 
 
 
@@ -123,6 +123,9 @@ class FullscreenActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+
         setContentView(R.layout.activity_fullscreen)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
@@ -141,11 +144,14 @@ class FullscreenActivity : AppCompatActivity() {
         // while interacting with the UI.
         findViewById<Button>(R.id.photo_button).setOnTouchListener(delayHideTouchListener)
 
-        myTextureView = findViewById(R.id.camTextureView)
         cameraLayout = findViewById(R.id.CameraLayout)
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         numberOfFaces = findViewById(R.id.editTextNumber)
+
+        photo_button.setOnClickListener(View.OnClickListener {
+            buttonClicked = true
+        })
 
 
     }
@@ -220,33 +226,6 @@ class FullscreenActivity : AppCompatActivity() {
          */
         private const val UI_ANIMATION_DELAY = 300
     }
-
-    var mySurfaceTextureListener: TextureView.SurfaceTextureListener = object: TextureView.SurfaceTextureListener{
-        override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
-            configureTransform(width,height)
-
-        }
-
-        override fun onSurfaceTextureUpdated(surface: SurfaceTexture?) {
-            if (myTextureView != null){
-
-              //  myTextureView.surfaceTexture.releaseTexImage()
-
-            }
-        }
-
-        override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?): Boolean {
-            return true
-        }
-
-        override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
-            openCamera(width,height)
-
-
-        }
-
-    }
-
 
 
     class ImageConverter {
@@ -478,30 +457,32 @@ class FullscreenActivity : AppCompatActivity() {
 //                            .setRotation(90)
 //                            .build()
 
-                    val image: FirebaseVisionImage = FirebaseVisionImage.fromBitmap(rotatedBitmap)
-                    val detector: FirebaseVisionFaceDetector = FirebaseVision.getInstance()
-                        .getVisionFaceDetector(options)
-                    val result: Task<List<FirebaseVisionFace>> = detector.detectInImage(image)
-                        .addOnSuccessListener(
-                            object : OnSuccessListener<List<FirebaseVisionFace?>?> {
-                                override fun onSuccess(faces: List<FirebaseVisionFace?>?) {
-                                    // Task completed successfully
-                                    // ...
-                                    //println("Success")
-                                    //println("Number of faces: ${faces!!.count()}")
-                                    numberOfFaces.setText("Number of faces: ${faces!!.count()}")
-                                for (face in faces!!) {
-                                    val bounds = face?.boundingBox
-                                    var p: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
-                                    var canvas: Canvas = Canvas(rotatedBitmap)
-                                    p.setColor(Color.rgb(0, 255, 0))
-                                    p.setTextSize(10F)
-                                    var rect: Rect = Rect(bounds)
-                                    canvas.drawRect(rect, p)
+                    if(buttonClicked == true){
+                        buttonClicked = false
+                        val image: FirebaseVisionImage = FirebaseVisionImage.fromBitmap(rotatedBitmap)
+                        val detector: FirebaseVisionFaceDetector = FirebaseVision.getInstance()
+                            .getVisionFaceDetector(options)
+                        val result: Task<List<FirebaseVisionFace>> = detector.detectInImage(image)
+                            .addOnSuccessListener(
+                                object : OnSuccessListener<List<FirebaseVisionFace?>?> {
+                                    override fun onSuccess(faces: List<FirebaseVisionFace?>?) {
+                                        // Task completed successfully
+                                        // ...
+                                        //println("Success")
+                                        //println("Number of faces: ${faces!!.count()}")
+                                        numberOfFaces.setText("Number of faces: ${faces!!.count()}")
+                                        for (face in faces!!) {
+                                            val bounds = face?.boundingBox
+                                            var p: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+                                            var canvas: Canvas = Canvas(rotatedBitmap)
+                                            p.setColor(Color.rgb(0, 255, 0))
+                                            p.setTextSize(10F)
+                                            var rect: Rect = Rect(bounds)
+                                            canvas.drawRect(rect, p)
 
-                                }
-                                    myImageView.setImageBitmap(rotatedBitmap)
-                                      //canvas.drawText(face!!.trackingId, toFloat(rect.left), toFloat(rect.top), p)
+                                        }
+                                        myImageView.setImageBitmap(rotatedBitmap)
+                                        //canvas.drawText(face!!.trackingId, toFloat(rect.left), toFloat(rect.top), p)
 
 //                                    //println(bounds)
 //                                    val rotY =
@@ -539,17 +520,19 @@ class FullscreenActivity : AppCompatActivity() {
 //                                        //println(id)
 //                                    }
 //                                }
-                                }
-                            })
-                        .addOnFailureListener(
-                            object : OnFailureListener {
-                                override fun onFailure(p0: java.lang.Exception) {
-                                    println("Failure")
+                                    }
+                                })
+                            .addOnFailureListener(
+                                object : OnFailureListener {
+                                    override fun onFailure(p0: java.lang.Exception) {
+                                        println("Failure")
 
-                                }
-                            })
+                                    }
+                                })
 
-                    //myImageView.setImageBitmap(rotatedBitmap)
+                        //myImageView.setImageBitmap(rotatedBitmap)
+                    }
+
                 })
             //}
             //catch(e: Exception){
@@ -569,15 +552,8 @@ class FullscreenActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
         startBackgroungThread()
-
-
-        if(myTextureView?.isAvailable == true){
-            openCamera(myTextureView!!.width,myTextureView!!.height)
-        }else{
-            myTextureView!!.surfaceTextureListener = mySurfaceTextureListener
-        }
+        openCamera(MAX_PREVIEW_WIDTH,MAX_PREVIEW_HEIGHT)
     }
 
     override fun onPause() {
@@ -586,27 +562,26 @@ class FullscreenActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    private fun closeCamera(){
+    private fun openCamera(width: Int,height: Int){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+            requestCameraPermission()
+            return
+        }
+
+        setUpCameraOutputs(width, height)
+        var cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try{
-            myCameraOpenCloseLock.acquire()
-            if (null != myCaptureSession){
-                myCaptureSession!!.close()
-                myCaptureSession = null
+            if (!myCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)){
+                throw RuntimeException("Time out waiting to lock camera opening")
             }
-            if (null != myCameraDevice){
-                myCameraDevice!!.close()
-                myCameraDevice = null
-            }
-            if (null != myImageReader){
-                myImageReader?.close()
-                myImageReader = null
-            }
-        }catch(e:InterruptedException){
-            throw RuntimeException()
-        } finally{
-            myCameraOpenCloseLock.release()
+            cameraManager.openCamera(myCameraId,cameraCDSC,myBackgroundHandler)
+        }catch (e: CameraAccessException){
+            e.printStackTrace()
+        }catch (e:InterruptedException){
+            throw RuntimeException("Interrupted while trying to lock camera opening")
         }
     }
+
     //1080 x 1965 put here
     private fun setUpCameraOutputs(width:Int,height:Int){
         var cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -617,47 +592,10 @@ class FullscreenActivity : AppCompatActivity() {
                 if (orientation != null && orientation == CameraCharacteristics.LENS_FACING_FRONT){
                     continue
                 }
-
-                var map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                //println(map)
-                if (map == null){
-                    continue
-                }
-
-                var sizesList:MutableList<Size> = ArrayList()
-                sizesList.addAll(map.getOutputSizes(ImageFormat.JPEG))
-
-                var largestPreviewSize: Size = Collections.max(sizesList, compareSizesByArea())
-
+                myCameraId = cameraId
                 myImageReader = ImageReader.newInstance(MAX_PREVIEW_WIDTH,MAX_PREVIEW_HEIGHT,
                     ImageFormat.JPEG,2)
                 myImageReader?.setOnImageAvailableListener(myOnImageAvailableListener,myBackgroundHandler)
-                var displaySize = Point()
-
-                //displaySize(1080, 2131)
-                windowManager.defaultDisplay.getSize(displaySize)
-
-                var rotatedPreviewWidth = width
-                var rotatedPreviewHeight = height
-                var maxPreviewWidth = displaySize?.y
-                var maxPreviewHeight = displaySize?.x
-
-                if (maxPreviewWidth != null) {
-                    if (maxPreviewWidth > MAX_PREVIEW_WIDTH){
-                        maxPreviewWidth = MAX_PREVIEW_WIDTH
-                    }
-                }
-
-                if (maxPreviewHeight != null) {
-                    if (maxPreviewHeight > MAX_PREVIEW_HEIGHT){
-                        maxPreviewHeight = MAX_PREVIEW_HEIGHT
-                    }
-                }
-                myPreviewSize = chooseOptimalSize(sizesList.toTypedArray(), rotatedPreviewWidth,rotatedPreviewHeight,maxPreviewWidth,maxPreviewHeight)//,largestPreviewSize)
-               // println("myPreviewSize: $myPreviewSize")
-
-
-                myCameraId = cameraId
                 return
             }
         }catch (e: CameraAccessException) {
@@ -671,12 +609,6 @@ class FullscreenActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.P)
     private fun createCameraPreviewSession(){
         try {
-
-            var texture = myTextureView!!.surfaceTexture
-            texture.setDefaultBufferSize(myPreviewSize!!.getWidth(), myPreviewSize!!.getHeight())
-            var surface = Surface(texture)
-            //val mImageSurface: Surface? = myImageReader?.getSurface()
-
             myPreviewRequestBuilder =
                 myCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
 
@@ -688,7 +620,8 @@ class FullscreenActivity : AppCompatActivity() {
             //myPreviewRequestBuilder.set(CaptureRequest.JPEG_QUALITY, 90.toByte())
             var cameraCSSC = object : CameraCaptureSession.StateCallback() {
                 override fun onConfigureFailed(session: CameraCaptureSession) {
-
+                    stopBackgroundThread()
+                    finish()
                 }
 
                 override fun onConfigured(session: CameraCaptureSession) {
@@ -715,7 +648,7 @@ class FullscreenActivity : AppCompatActivity() {
             }
 
             //Image modifications
-            myCameraDevice!!.createCaptureSession(Arrays.asList(surface, myImageReader?.surface!!),cameraCSSC, null)
+            myCameraDevice!!.createCaptureSession(Arrays.asList(myImageReader?.surface!!),cameraCSSC, myBackgroundHandler)
             //println("AFTER: ${surface}, ${myImageReader?.surface!!}")
 
 
@@ -742,8 +675,6 @@ class FullscreenActivity : AppCompatActivity() {
         if(requestCode == REQUEST_CAMERA_PERMISSION){
             if(grantResults.isNotEmpty() && grantResults[0] != PackageManager.PERMISSION_GRANTED)
                 exitProcess(1)
-        }else{
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
     }
 
@@ -765,98 +696,7 @@ class FullscreenActivity : AppCompatActivity() {
         }
     }
 
-    private fun chooseOptimalSize(choices:Array<Size>, textureViewWidth:Int, textureViewHeight:Int,
-                                  maxWidth:Int?, maxHeight:Int?//, aspectRatio: Size
-    ): Size
-    {
-        var bigEnough:MutableList<Size> = ArrayList()
-        var notBigEnough:MutableList<Size> = ArrayList()
-//        var w = aspectRatio.width
-//        var h = aspectRatio.height
-        for (option in choices){
-            if (option.width <= maxWidth!! && option.height <= maxHeight!!){
-                if (option.width >= textureViewWidth && option.height >= textureViewHeight){
-                    bigEnough.add(option)
-                }
-                else{
-                    notBigEnough.add(option)
-                }
-            }
-        }
 
-        if(bigEnough.size > 0){
-            return Collections.max(bigEnough, compareSizesByArea())
-        }else if(notBigEnough.size > 0) {
-            return Collections.max(notBigEnough, compareSizesByArea())
-        } else {
-            return choices[0]
-        }
-
-    }
-
-    private fun configureTransform(viewWidth:Int, viewHeight:Int){
-        if (null == myTextureView || null == myPreviewSize){
-            return
-        }
-
-        var rotation =windowManager.defaultDisplay.rotation
-        var matrix: Matrix? = Matrix()
-        var viewRect = RectF(0F,0F,viewWidth.toFloat(),viewHeight.toFloat())
-        var bufferRect = RectF(0F,0F,myPreviewSize!!.height.toFloat(),myPreviewSize!!.width.toFloat())
-        var centerX = viewRect.centerX()
-        var centerY = viewRect.centerY()
-        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation){
-            bufferRect.offset(centerX- bufferRect.centerX(), centerY - bufferRect.centerY())
-            matrix!!.setRectToRect(viewRect,bufferRect, Matrix.ScaleToFit.FILL)
-            //Use max to set it to fullscreen. Use min to not scale resolution
-            var scale = Math.max((viewHeight/myPreviewSize!!.width.toDouble()).toFloat(),(viewWidth/myPreviewSize!!.height.toDouble()).toFloat())
-
-            matrix.postScale(scale,scale,centerX,centerY)
-            matrix.postRotate(90*(rotation-2).toFloat(),centerX,centerY)
-        }
-        else if (Surface.ROTATION_180 == rotation){
-            matrix!!.postRotate(180.toFloat(),centerX,centerY)
-        }
-        else if (Surface.ROTATION_0 == rotation)
-        {
-            bufferRect.offset(centerX- bufferRect.centerX(), centerY - bufferRect.centerY())
-            matrix!!.setRectToRect(viewRect,bufferRect, Matrix.ScaleToFit.FILL)
-
-            var scale = Math.max((viewHeight/myPreviewSize!!.width.toDouble()).toFloat(),(viewWidth/myPreviewSize!!.height.toDouble()).toFloat())
-            matrix.postScale(scale,scale,centerX,centerY)
-
-        }
-        //println("matrix: $matrix")
-        myTextureView!!.setTransform(matrix)
-    }
-
-    class compareSizesByArea: Comparator<Size>{
-        override fun compare(lhs: Size?, rhs: Size?): Int {
-            var i = sign(((lhs!!.width * lhs.height).toLong() - (rhs!!.width * rhs.height).toLong()).toDouble())
-            return i.toInt()
-        }
-    }
-
-    private fun openCamera(width: Int,height: Int){
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
-            requestCameraPermission()
-            return
-        }
-
-        setUpCameraOutputs(width, height)
-        configureTransform(width,height)
-        var cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        try{
-            if (!myCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)){
-                throw RuntimeException("Time out waiting to lock camera opening")
-            }
-            cameraManager.openCamera(myCameraId,cameraCDSC,myBackgroundHandler)
-        }catch (e: CameraAccessException){
-            e.printStackTrace()
-        }catch (e:InterruptedException){
-            throw RuntimeException("Interrupted while trying to lock camera opening")
-        }
-    }
 
     var cameraCDSC = object: CameraDevice.StateCallback(){
         @RequiresApi(Build.VERSION_CODES.P)
@@ -880,6 +720,28 @@ class FullscreenActivity : AppCompatActivity() {
             finish()
         }
 
+    }
+
+    private fun closeCamera(){
+        try{
+            myCameraOpenCloseLock.acquire()
+            if (null != myCaptureSession){
+                myCaptureSession!!.close()
+                myCaptureSession = null
+            }
+            if (null != myCameraDevice){
+                myCameraDevice!!.close()
+                myCameraDevice = null
+            }
+            if (null != myImageReader){
+                myImageReader?.close()
+                myImageReader = null
+            }
+        }catch(e:InterruptedException){
+            throw RuntimeException()
+        } finally{
+            myCameraOpenCloseLock.release()
+        }
     }
 
 
