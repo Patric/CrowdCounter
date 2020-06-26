@@ -16,6 +16,15 @@
          android:fitsSystemWindows. -->
 
 
+    <!--    <android.opengl.GLSurfaceView-->
+    <!--        android:id="@+id/myGLSurfaceView"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="match_parent"-->
+    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--        app:layout_constraintEnd_toEndOf="parent"-->
+    <!--        app:layout_constraintStart_toStartOf="parent"-->
+    <!--        app:layout_constraintTop_toTopOf="parent" />-->
+
     <TextView
         android:id="@+id/fullscreen_content"
         android:layout_width="match_parent"
@@ -43,12 +52,26 @@
         app:layout_constraintTop_toTopOf="@id/fullscreen_content"
         tools:ignore="UselessParent">
 
+
     </LinearLayout>
 
     <FrameLayout
         android:id="@+id/CameraLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+
+        <ImageView
+            android:id="@+id/myImageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="false"
+            android:background="@color/black_overlay"
+            android:cropToPadding="false"
+            android:isScrollContainer="false"
+            android:keepScreenOn="false"
+            android:scaleType="fitCenter"
+            app:srcCompat="@color/black_overlay" />
 
         <Button
             android:id="@+id/photo_button"
@@ -62,7 +85,21 @@
         <TextureView
             android:id="@+id/camTextureView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:layout_gravity="center_horizontal|center_vertical" />
+
+        <TextView
+            android:id="@+id/editTextNumber"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Preparing counter..."
+            android:textAlignment="center"
+            android:textColor="#FFFFFF"
+            android:textSize="36sp"
+            android:visibility="visible"
+            tools:visibility="visible" />
+
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
