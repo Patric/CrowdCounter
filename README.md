@@ -65,6 +65,7 @@ Pozostałe zmienne zostaną omówione w trakcie omawiania kodu. Cały proces roz
 `   `openCamera(**MAX\_PREVIEW\_WIDTH**,**MAX\_PREVIEW\_HEIGHT**) } 
 
 Wywołanie metody onResume jest równoznaczne z rozpoczęciem użytkowania programu przez użytkownika np. po odblokowaniu telefonu. Praca kamery musi być obsługiwane przez inny wątek niż pozostała część aplikacji (dla zwiększenia responsywności). Jest on tworzony w  metodzie  startBackgroundThread().  Metoda  openCamera()  służy  do  konfiguracji  i nawiązania łączności z kamerą.  
+```
 
 **private fun** openCamera(width: Int,height: Int){ 
 
@@ -99,6 +100,7 @@ Wywołanie metody onResume jest równoznaczne z rozpoczęciem użytkowania progr
 `       `} 
 
 `   `} 
+```
 **Ostateczne rozwiązanie w postaci ImageView, ML Kit oraz Firebase** 
 
 Ostatecznie zdecydowaliśmy się na to, aby wyświetlać obraz na warstwie ImageView po pobraniu  zdjęcia  z  ImageReadera  za  pomocą  OnImageAvailableListenera  w  metodzie onImageAvailable: 
@@ -132,7 +134,7 @@ var rotatedBitmap = Bitmap.createBitmap(     bitmap,
 ) 
 
 Obraz konwertowany jest do bitmapy, poddawany rotacji,  a następnie konwertowany do formatu  FirebaseVisionImage  i  przekazywany  do  detektora  i  wyświetlany  poprzez setImageBitmap: 
-
+```
 val image: FirebaseVisionImage = FirebaseVisionImage.fromBitmap(rotatedBitmap) val detector: FirebaseVisionFaceDetector = FirebaseVision.getInstance() 
 
 `    `.getVisionFaceDetector(options) 
@@ -170,7 +172,7 @@ canvas.drawRect(rect, p) ![](Aspose.Words.58532374-9415-4f2e-b031-a37f883fa4b0.0
 `                `myImageView.setImageBitmap(rotatedBitmap) 
 
 … 
-
+```
 Operacja wyświetlania obrazu musi być wykonywana na tym samym wątku, co operacja UI. 
 
 Do wykrywania twarzy wykorzystaliśmy ML Kit, który wymagał połączenia aplikacji z Firebase. Firebase pozwala na gromadzenie danych w chmurze, analizowanie aplikacji na przeróżne sposoby oraz na dostęp do wielu innych opcji w bardzo prosty, lecz ograniczony sposób. W naszym przypadku było to potrzebne do wykorzystania ML Kit. 
