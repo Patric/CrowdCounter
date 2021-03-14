@@ -1,4 +1,4 @@
-*„Szacowanie ilości osób w tłumie na platformie Android”*
+# Szacowanie ilości osób w tłumie na platformie Android
 Łukasz Olejnik, Patryk Sulej
 
 1. **Przegląd rozwiązań** 
