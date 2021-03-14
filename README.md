@@ -1,14 +1,5 @@
-﻿**POLITECHNIKA WARSZAWSKA** 
-
-**Wydział Mechatroniki** 
-
-Programowanie niskopoziomowe 
-
-*Projekt* 
-
 ***„Szacowanie ilości osób w tłumie na platformie Android”*** 
-
-Łukasz Olejnik, Patryk Sulej, 33ip 
+Łukasz Olejnik, Patryk Sulej
 
 1. **Przegląd rozwiązań** 
 
