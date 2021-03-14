@@ -197,10 +197,6 @@ Udało nam się uzyskać następujące efekty:
 
 5. **Podsumowanie oraz wnioski** 
 
-Podsumowując, zaimplementowanie sieci w Androidzie jest możliwe, ale wymaga bardzo dobrej znajomości wybranego przez siebie środowiska. Trzeba wiedzieć gdzie i dlaczego może  wystąpić  problem.  Dużym  problemem  jest  kompatybilność  poszczególnych  wersji różnych  programów.  TensorFlow  wymaga  kilku  dodatkowych  bibliotek  do  pracy.  Cała dziedzina deep learningu bardzo szybko się rozwija i wszystkie są aktualizowane. W żadnym poradniku nie ma dokładnego spisu wersji wszystkich bibliotek, więc jeżeli jest starszy niż 2- 3 miesiące to na pewno natrafimy na problemy. 
-
-Warto także dodać, że nawet jeśli z wstępnej analizy wynika, że jest możliwość integracji różnych technologii to w praktyce czasem może być to niemożliwe i dobrze jest wykonać wcześniej pewnego rodzaju testy sprawdzające kompatybilność technologii zanim zaczniemy czasochłonną pracę z konkretnym rozwiązaniem. 
-
 Jako dowód naszych zmagań załączam link do folderu Google Drive. Są tam różne bardziej lub na ogół mniej udane modele, notatniki z Google Colab i zdjęcia których używaliśmy do uczenia. [https://drive.google.com/drive/folders/1DLvxXKHNHT-Vjty1ZjVBjhiCKmTrMtbV?usp=sharing ](https://drive.google.com/drive/folders/1DLvxXKHNHT-Vjty1ZjVBjhiCKmTrMtbV?usp=sharing)
 
 Kod programu oraz plik instalacyjny CrowdCounter.apk znajduje się w zdalnym repozytorium:[ https://github.com/Patric/CrowdCounter ](https://github.com/Patric/CrowdCounter) 
