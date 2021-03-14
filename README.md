@@ -27,6 +27,7 @@ pomocnicze.
 ![](Aspose.Words.58532374-9415-4f2e-b031-a37f883fa4b0.002.jpeg)
 
 *Rysunek 2. Schemat działania Camera2 API. Źródło https://proandroiddev.com/understanding-camera2-api-from- callbacks-part-1-5d348de65950* 
+```
 
 Zmienne zdefiniowane na poziomie Aktywności: **val MAX\_PREVIEW\_WIDTH** = 640 
 
@@ -53,58 +54,58 @@ MAX\_PREVIEW\_WIDTH, MAX\_PREVIEW\_HEIGHT - zmienne oznaczające wymaganą rozdz
 myBackgroundThread - wątek obsługujący kamerę, 
 
 myBackgroundHandler - uchwyt do wątka obsługującego kamerę, myCameraOpenCloseLock - wskaźnik służący do sygnalizacji stanu włączonej kamery, z kamery może korzystać w danej chwili tylko jeden wątek REQUEST\_CAMERA\_PERMISSION - kod identyfikacyjny zapytania o uprawnienia do korzystania z kamery, jego wartość nie ma wielkiego znaczenia, ważne by była stała. 
-
+```
 Pozostałe zmienne zostaną omówione w trakcie omawiania kodu. Cały proces rozpoczyna się w metodzie onResume().  
-
+```
 **override fun** onResume() { 
 
-`   `**super**.onResume() 
+   `**super**.onResume() 
 
-`   `startBackgroungThread() 
+   `startBackgroungThread() 
 
-`   `openCamera(**MAX\_PREVIEW\_WIDTH**,**MAX\_PREVIEW\_HEIGHT**) } 
-
+  `openCamera(**MAX\_PREVIEW\_WIDTH**,**MAX\_PREVIEW\_HEIGHT**) } 
+```
 Wywołanie metody onResume jest równoznaczne z rozpoczęciem użytkowania programu przez użytkownika np. po odblokowaniu telefonu. Praca kamery musi być obsługiwane przez inny wątek niż pozostała część aplikacji (dla zwiększenia responsywności). Jest on tworzony w  metodzie  startBackgroundThread().  Metoda  openCamera()  służy  do  konfiguracji  i nawiązania łączności z kamerą.  
 ```
 
 **private fun** openCamera(width: Int,height: Int){ 
 
-`       `**if** (ContextCompat.checkSelfPermission(**this**, Manifest.permission.*CAMERA*) != PackageManager.*PERMISSION\_GRANTED*){ 
+      `**if** (ContextCompat.checkSelfPermission(**this**, Manifest.permission.*CAMERA*) != PackageManager.*PERMISSION\_GRANTED*){ 
 
-`           `requestCameraPermission() 
+           `requestCameraPermission() 
 
-`           `**return** 
+           `**return** 
 **
-`       `} 
+       `} 
 
-`       `setUpCameraOutputs(width, height)* 
+       `setUpCameraOutputs(width, height)* 
 \*
-`       `**var** cameraManager = getSystemService(Context.*CAMERA\_SERVICE*) **as** CameraManager 
+       `**var** cameraManager = getSystemService(Context.*CAMERA\_SERVICE*) **as** CameraManager 
 
-`       `**try**{ 
+       `**try**{ 
 
-`           `**if** (!**myCameraOpenCloseLock**.tryAcquire(2500, TimeUnit.**MILLISECONDS**)){ 
+           `**if** (!**myCameraOpenCloseLock**.tryAcquire(2500, TimeUnit.**MILLISECONDS**)){ 
 
-`               `**throw** RuntimeException(**"Time out waiting to lock camera opening"**) 
+               `**throw** RuntimeException(**"Time out waiting to lock camera opening"**) 
 
-`           `} 
+           `} 
 
-`           `cameraManager.openCamera(**myCameraId**,**cameraCDSC**,**myBackgroundHandler**)        }**catch** (e: CameraAccessException){ 
+           `cameraManager.openCamera(**myCameraId**,**cameraCDSC**,**myBackgroundHandler**)        }**catch** (e: CameraAccessException){ 
 
-`           `e.printStackTrace() 
+          `e.printStackTrace() 
 
-`       `}**catch** (e:InterruptedException){ 
+      `}**catch** (e:InterruptedException){ 
 
-`           `**throw** RuntimeException(**"Interrupted while trying to lock camera opening"**) 
+           `**throw** RuntimeException(**"Interrupted while trying to lock camera opening"**) 
 
-`       `} 
+       `} 
 
-`   `} 
+   `} 
 ```
 **Ostateczne rozwiązanie w postaci ImageView, ML Kit oraz Firebase** 
 
 Ostatecznie zdecydowaliśmy się na to, aby wyświetlać obraz na warstwie ImageView po pobraniu  zdjęcia  z  ImageReadera  za  pomocą  OnImageAvailableListenera  w  metodzie onImageAvailable: 
-
+```
 val readImage: Image? = reader?.acquireLatestImage() ![](Aspose.Words.58532374-9415-4f2e-b031-a37f883fa4b0.012.png)
 
 val bBuffer: ByteBuffer = readImage?.getPlanes()?.get(0)!!.getBuffer() bBuffer.rewind() ![](Aspose.Words.58532374-9415-4f2e-b031-a37f883fa4b0.013.png)
@@ -132,7 +133,7 @@ var rotatedBitmap = Bitmap.createBitmap(     bitmap,
 `    `true 
 
 ) 
-
+```
 Obraz konwertowany jest do bitmapy, poddawany rotacji,  a następnie konwertowany do formatu  FirebaseVisionImage  i  przekazywany  do  detektora  i  wyświetlany  poprzez setImageBitmap: 
 ```
 val image: FirebaseVisionImage = FirebaseVisionImage.fromBitmap(rotatedBitmap) val detector: FirebaseVisionFaceDetector = FirebaseVision.getInstance() 
