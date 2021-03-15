@@ -11,9 +11,11 @@ Do obsługi kamery w naszym projekcie wybraliśmy API Camera2. Pobranie obrazu z
 ![](Aspose.Words.58532374-9415-4f2e-b031-a37f883fa4b0.002.jpeg)
 
 *Rysunek 2. Schemat działania Camera2 API. Źródło https://proandroiddev.com/understanding-camera2-api-from- callbacks-part-1-5d348de65950* 
+
+Zmienne zdefiniowane na poziomie Aktywności: 
 ```
 
-Zmienne zdefiniowane na poziomie Aktywności: **val MAX\_PREVIEW\_WIDTH** = 640 
+**val MAX\_PREVIEW\_WIDTH** = 640 
 
 **val MAX\_PREVIEW\_HEIGHT** = 460 
 
@@ -39,7 +41,7 @@ myBackgroundThread - wątek obsługujący kamerę,
 
 myBackgroundHandler - uchwyt do wątka obsługującego kamerę, myCameraOpenCloseLock - wskaźnik służący do sygnalizacji stanu włączonej kamery, z kamery może korzystać w danej chwili tylko jeden wątek REQUEST\_CAMERA\_PERMISSION - kod identyfikacyjny zapytania o uprawnienia do korzystania z kamery, jego wartość nie ma wielkiego znaczenia, ważne by była stała. 
 ```
-Pozostałe zmienne zostaną omówione w trakcie omawiania kodu. Cały proces rozpoczyna się w metodzie onResume().  
+Cały proces rozpoczyna się w metodzie onResume().  
 ```
 **override fun** onResume() { 
 
