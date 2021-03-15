@@ -3,10 +3,7 @@
 
 **Wyświetlanie obrazu z kamery na ekranie.** 
 
-Do obsługi kamery w naszym projekcie wybraliśmy API Camera2. Pobranie obrazu z kamery i wyświetlenie go na ekranie jest procesem wieloetapowym. Wiąże się z obsługą odpowiednich wywołań zwrotnych (ang. *callbacks*) i metod systemu Android związanych z cyklem życia Aktywności (ang. *Activities*). Ponieważ cały proces jest dość skomplikowany to postaram się najpierw przedstawić ogólny przebieg programu, a następnie opisać metody 
-
-pomocnicze.
-
+Do obsługi kamery w naszym projekcie wybraliśmy API Camera2. Pobranie obrazu z kamery i wyświetlenie go na ekranie jest procesem wieloetapowym. Wiąże się z obsługą odpowiednich wywołań zwrotnych (ang. *callbacks*) i metod systemu Android związanych z cyklem życia Aktywności (ang. *Activities*).
 ![](Aspose.Words.58532374-9415-4f2e-b031-a37f883fa4b0.001.jpeg)
 
 *Rysunek 1. Cykl życia Activity. Źródło: https://developer.android.com/guide/components/activities/activity- lifecycle.* 
